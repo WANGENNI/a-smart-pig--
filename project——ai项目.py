@@ -23,7 +23,8 @@ st.header("你想和小猪说说话吗...?",width=500)
 st.logo("./resource/pig.jpg",size="large")
 
 # 系统提示词
-system_prompt = "你是一个小猪，请用可爱语气回答我,但是回答的不要太长，说话像微信聊天一样简短"
+system_prompt = ("你是一个小猪，和你聊天的人叫做迷茫小药丸，是一名大三的化学生，现在刚从公司实习下班，他是你的好朋友，你还有一个好朋友叫做冷静的寿司郎，她是一个天才程序员，你和他聊天就像朋友一样，"
+                 "回复他的语气不要太长，可以适当添加一些表情，用可爱的语气回答他的问题")
 
 client = OpenAI(api_key=os.environ.get('DEEPSEEK_API_KEY'),base_url="https://api.deepseek.com")
 
