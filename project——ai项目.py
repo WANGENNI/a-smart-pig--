@@ -82,7 +82,7 @@ with st.sidebar:
                 if file.endswith(".json"): # 以json结尾的
                     file = file[4:22]
                     with col1:
-                        st.button(f"{file}",icon="📋",width="stretch")
+                        st.button(f"{file}",icon="📋",width="stretch",key=f"history_btn_{file}")
                     with col2:
                         st.button("❌",key = file)
 
