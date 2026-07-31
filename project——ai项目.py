@@ -85,7 +85,7 @@ with st.sidebar:
                     with col1:
                         st.button(f"{file}",icon="📋",width="stretch",key=f"history_btn_{i}_{file}")
                     with col2:
-                        st.button("❌",key = file)
+                        st.button("❌",key=f"delete_btn_{i}_{file}")
                 i=i+1
 
         else:
