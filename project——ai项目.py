@@ -78,13 +78,15 @@ with st.sidebar:
             st.markdown("你之前和小猪的对话：")
             file_list = os.listdir("会话记录")
             col1, col2 = st.columns([0.8, 0.2])
+            i=0
             for file in file_list:
                 if file.endswith(".json"): # 以json结尾的
                     file = file[4:22]
                     with col1:
-                        st.button(f"{file}",icon="📋",width="stretch",key=f"history_btn_{file}")
+                        st.button(f"{file}",icon="📋",width="stretch",key=f"history_btn_{i}_{file}")
                     with col2:
                         st.button("❌",key = file)
+                i=i+1
 
         else:
             st.markdown("你还没有和小猪说过话！")
