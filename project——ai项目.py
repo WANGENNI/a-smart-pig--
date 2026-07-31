@@ -1,7 +1,10 @@
 import streamlit as st
 import os
 from openai import OpenAI
+from datetime import datetime
+import json
 
+# ================= 页面基本配置 =================
 print("---------->重新加载页面\n")
 st.set_page_config(
     page_title="我是一个猪能伴侣",
@@ -21,26 +24,94 @@ st.header("你想和小猪说说话吗...?",width=500)
 # logo
 st.logo("./resource/pig.jpg",size="large")
 
+
+#==================  保存会话函数=======================
+def save_session():
+    if st.session_state.file:  # (如果会话名字存在的话)
+        data = {
+            "file": st.session_state.file,
+            "name": st.session_state.name,
+            "message": st.session_state.message
+        }
+        if not os.path.exists("会话记录"):  # 判断路径是否存在
+            os.makedirs("会话记录")# 创建文件夹
+
+        # 写入数据
+        with open(f"会话记录/{st.session_state.file}.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)  # 把data写入f，不要转义显示中文，缩进2格
+
+
+# ================== 初始化=====================
+
+# 创建保存用户昵称
 if "name" not in st.session_state:
     st.session_state.name = '两脚兽'
 
 
-# 系统提示词
-system_prompt = f"你是一个小猪，但是你非常聪明，和你聊天的是{st.session_state.name}你是人类的好帮手，用可爱的语气回答他的问题，但是不要太长哦"
+# 创建保存聊天记录列表
+if "message" not in st.session_state:
+    st.session_state.message = []
 
-# 侧边栏
+# 创建保存会话文件
+if "file" not in st.session_state:
+    st.session_state.file = datetime.now().strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
+
+
+# ============================================侧边栏====================================================
 with st.sidebar:
-    st.header("侧边栏")
-    input_name = st.text_area("你想要小猪叫你什么呢",placeholder="请输入你的昵称",value="两脚人类")
+    st.header("⏲小猪控制面板")
+    st.markdown("\n")
+
+    # =============按下按钮===============
+    if st.button("新建会话", help="按这个可以新建和小猪的对话", icon="📩", icon_position="right", width="stretch"):
+        if st.session_state.message:  # message有内容True
+            # 新建会话，初始化上次会话内容
+            st.session_state.message = []
+            st.session_state.name = '两脚兽'
+            st.session_state.file = datetime.now().strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")  # 新建文件
+
+
+    # 加载会话列表
+
+    if os.path.exists("会话记录"):  #文件夹路径存在
+        if os.listdir("会话记录")!=[]:
+            st.markdown("你之前和小猪的对话：")
+            file_list = os.listdir("会话记录")
+            col1, col2 = st.columns([0.8, 0.2])
+            for file in file_list:
+                if file.endswith(".json"): # 以json结尾的
+                    file = file[4:22]
+                    with col1:
+                        st.button(f"{file}",icon="📋",width="stretch")
+                    with col2:
+                        st.button("❌",key = file)
+
+        else:
+            st.markdown("你还没有和小猪说过话！")
+            st.markdown("快去和他聊聊吧")
+    else:
+        st.markdown("你还没有和小猪说过话！")
+        st.markdown("快去和他聊聊吧")
+
+
+
+    st.markdown("\n")
+    st.image("./resource/pig2.jpg",caption="小猪正在思考")
+    input_name = st.text_area("你想要小猪叫你什么呢",placeholder="请输入你的昵称",value=st.session_state.name)
     if input_name:
         st.session_state.name = input_name
 
+
+
+# =========================================系统提示词==========================================
+system_prompt = f"你是一个小猪，但是你非常聪明，和你聊天的是{st.session_state.name}你是人类的好帮手，用可爱的语气回答他的问题，但是不要太长哦"
+
+
+
+
+# 创建ai大模型
 client = OpenAI(api_key=os.environ.get('DEEPSEEK_API_KEY'),base_url="https://api.deepseek.com")
 
-
-# 创建保存聊天列表
-if "message" not in st.session_state:
-    st.session_state.message = []
 
 # 展示聊天记录
 for message in st.session_state.message:
@@ -51,24 +122,14 @@ for message in st.session_state.message:
 
 
 
-
-# 输入框
+# =====================================输入===============================
 prompt = st.chat_input("say something")
 
 if prompt:# 字符串非空  ——>True
     st.chat_message("user",avatar="🐶").write(f"{prompt}")
-    print("--------->调用ai大模型，提示词：",prompt,"\n")
 
     st.session_state.message.append({"role": "user", "content": prompt})
-#
-    print([
-            # 系统提示词
-            {"role": "system", "content": system_prompt},
-            # 滚雪球 记忆对话   # {"role": "user", "content": prompt},
-            *st.session_state.message  # 把massage（dict）的内容解包出
 
-        ])
-#
     # 调用ai
     response = client.chat.completions.create(
         model="deepseek-v4-pro",
@@ -88,34 +149,20 @@ if prompt:# 字符串非空  ——>True
     # print("<-------------ai返回结果：",response.choices[0].message.content,"\n")
     # st.session_state.message.append({"role": "assistant", "content": response.choices[0].message.content})
 
-    # stream = True
-    # response_message = st.empty()  # 创建一个空对象
-    # full_response = ''
-    # for chunk in response:
-    #     if chunk.choices[0].delta.content is not None:
-    #         content = chunk.choices[0].delta.content
-    #         full_response += content
-    #         response_message.chat_message("assistant",avatar="🐷").write(full_response)
-    #
-    # st.session_state.message.append({"role": "assistant", "content": full_response})
-    # 1. 先固定好外层的聊天气泡和头像
     with st.chat_message("assistant", avatar="🐷"):
-
-        # 2. 在气泡“内部”挖一个坑，用来动态更新文字
+        # 占位
         message_response = st.empty()
         full_response = ''
 
-        # 3. 循环接收流式数据
+        # 循环接收流式数据
         for chunk in response:
             if chunk.choices[0].delta.content is not None:
                 content = chunk.choices[0].delta.content
                 full_response += content
 
-                # 4. 只刷新坑里的 Markdown 文本，加上一个光标(▌)显得更像在打字
                 message_response.markdown(full_response + "▌",help="小猪的猪脑正在疯狂思考中...")
 
-        # 5. 循环结束后，把光标去掉，显示最终文本
         message_response.markdown(full_response,help="小猪思考完成！")
 
-    # 6. 保存到历史记录中
     st.session_state.message.append({"role": "assistant", "content": full_response})
+    save_session()
