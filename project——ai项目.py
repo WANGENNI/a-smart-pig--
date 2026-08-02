@@ -4,6 +4,7 @@ from openai import OpenAI
 from datetime import datetime
 import json
 
+
 # ================= 页面基本配置 =================
 print("---------->重新加载页面\n")
 st.set_page_config(
@@ -39,6 +40,34 @@ def save_session():
         # 写入数据
         with open(f"会话记录/{st.session_state.file}.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)  # 把data写入f，不要转义显示中文，缩进2格
+
+
+
+
+#==================  加载会话函数=======================
+def load_session(session_name):
+    try:
+        if os.path.exists(f"会话记录/{session_name}"):
+            with open(f"会话记录/{session_name}","r",encoding = "utf-8") as f:
+                file_data = json.load(f)
+                st.session_state.message = file_data["message"]
+                st.session_state.name = file_data["name"]
+                st.session_state.file = session_name
+    except Exception :
+        st.error("加载失败")
+
+
+#==================  加载会话函数=======================
+def delete_session(session_name):
+    if os.path.exists(f"会话记录/{session_name}"):
+        os.remove(f"会话记录/{session_name}") # 删除文件
+        st.success("删除成功")
+        if session_name == st.session_state.file:
+            st.session_state.message=[]
+            st.session_state.file = datetime.now().strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
+            st.session_state.name = "两脚兽"
+    else:
+        st.error("删除失败")
 
 
 # ================== 初始化=====================
@@ -81,11 +110,16 @@ with st.sidebar:
             i=0
             for file in file_list:
                 if file.endswith(".json"): # 以json结尾的
-                    file = file[4:22]
+                    #file = file[4:22]
                     with col1:
-                        st.button(f"{file}",icon="📋",width="stretch",key=f"history_btn_{i}_{file}")
+                        if st.button(f"{file[4:23]}",icon="📋",width="stretch",key=f"load{i}_{file}",
+                                     type="primary" if file==st.session_state.file else "secondary"):
+                            load_session(file)
+                            st.rerun()
                     with col2:
-                        st.button("❌",key=f"delete_btn_{i}_{file}")
+                        if st.button("❌",key=f"delete{i}_{file}"):
+                            delete_session(file)
+                            st.rerun()
                 i=i+1
 
         else:
@@ -116,6 +150,7 @@ client = OpenAI(api_key=os.environ.get('DEEPSEEK_API_KEY'),base_url="https://api
 
 
 # 展示聊天记录
+st.markdown(f"{st.session_state.file[:-5]}:")
 for message in st.session_state.message:
     if message["role"] == "user":
         st.chat_message("user",avatar="🐶").write(f"{message['content']}")
