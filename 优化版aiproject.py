@@ -6,7 +6,7 @@ from datetime import datetime
 from openai import OpenAI
 from supabase import create_client, Client
 
-# ================= 页面基本配置 =================
+# ================= 页面配置 =================
 st.set_page_config(
     page_title="我是一个猪能伴侣",
     page_icon="🐷",
@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 
-# ================= 初始化数据库连接 =================
+# ================= supabase =================
 @st.cache_resource
 def init_supabase():
     url = st.secrets["SUPABASE_URL"]
@@ -36,6 +36,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
     st.session_state.username = ""
+    #=================   =============
 if "name" not in st.session_state:
     st.session_state.name = '两脚兽'
 if "message" not in st.session_state:
@@ -80,10 +81,10 @@ def delete_session_from_db(session_name):
 # ================= 登录与注册界面 =================
 if not st.session_state.logged_in:
     st.title("🐷 欢迎来到小猪伴侣")
-    st.markdown("请先登录或注册，你的聊天记录将会被安全地保存在云端哦！")
+    st.markdown("请先登录或注册，你的聊天记录将会被小猪安全地保存哦！")
 
     tab1, tab2 = st.tabs(["登录", "注册"])
-
+    # =========登录===========================
     with tab1:
         login_user = st.text_input("用户名", key="login_user")
         login_pwd = st.text_input("密码", type="password", key="login_pwd")
@@ -97,7 +98,7 @@ if not st.session_state.logged_in:
                     st.rerun()
                 else:
                     st.error("用户名或密码错误！")
-
+#  ================注册=======================
     with tab2:
         reg_user = st.text_input("设置用户名", key="reg_user")
         reg_pwd = st.text_input("设置密码", type="password", key="reg_pwd")
@@ -107,22 +108,23 @@ if not st.session_state.logged_in:
                 check = supabase.table("pig_users").select("*").eq("username", reg_user).execute()
                 if check.data:
                     st.error("这个名字已经被其他两脚兽占用了！")
-                else:
+                else:# 往piguser里添加
                     supabase.table("pig_users").insert(
                         {"username": reg_user, "password": hash_password(reg_pwd)}).execute()
-                    st.success("注册成功！请切换到登录页面登录。")
+                    st.success("注册成功！请切换登陆页面登录")
 
 else:
-    # ================= 主界面 (已登录) =================
+    # ================= 聊天界面==== =================
     st.caption(
         "清晨醒来，我被日历上的数字吓了一跳——现在竟是2036年！更匪夷所思的是，推开窗户，整个世界发生了翻天覆地的变化。枝头的麻雀、邻居的金毛，甚至是动物园里的猛兽，竟然全都变成了一只只圆滚滚、粉嫩嫩的萌系小猪！它们“哼哧哼哧”地迈着小短腿，在街上笨拙地跑来跑去。面对这个被粉红泡泡和可爱猪叫声占领的奇妙世界，我彻底陷入了沉思……",
         width=700)
-    st.header(f"你想和小猪说说话吗...? (当前登录: {st.session_state.username})")
+    st.subheader(f"你想和小猪说说话吗...? ")
 
-    # AI 客户端配置
     client = OpenAI(api_key=st.secrets['DEEPSEEK_API_KEY'], base_url="https://api.deepseek.com")
+    #================提示词======================
     system_prompt = f"你是一个小猪，但是你非常聪明，和你聊天的是{st.session_state.name}你是人类的好帮手，用可爱的语气回答他的问题，但是不要太长哦"
 
+    
     # ================= 侧边栏 =================
     with st.sidebar:
         st.header("⏲ 小猪面板")
@@ -137,10 +139,11 @@ else:
             if st.session_state.message:
                 st.session_state.message = []
                 st.session_state.file = datetime.now().strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
+                st.session_state.name = '两脚兽'
                 st.rerun()
 
         # 从数据库加载历史记录
-        st.markdown("### 📚 你的云端聊天记录：")
+        st.markdown("聊天记录：")
         res = supabase.table("pig_chats").select("session_name").eq("username", st.session_state.username).order(
             "updated_at", desc=True).execute()
 
@@ -183,12 +186,14 @@ else:
         st.chat_message("user", avatar="🐶").write(prompt)
         st.session_state.message.append({"role": "user", "content": prompt})
 
-        # 实时保存一下用户的提问到数据库
         save_session_to_db()
 
         response = client.chat.completions.create(
-            model="deepseek-chat",  # 这里改成你实际可用的 deepseek 模型名
-            messages=[{"role": "system", "content": system_prompt}, *st.session_state.message],
+            model="deepseek-v4-pro", 
+            messages=[
+                {"role": "system", "content": prompt},
+                *st.session_state.message  #解包
+            ],
             stream=True
         )
 
