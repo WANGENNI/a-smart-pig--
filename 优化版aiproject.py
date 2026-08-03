@@ -128,11 +128,6 @@ else:
     # ================= 侧边栏 =================
     with st.sidebar:
         st.header("⏲ 小猪面板")
-        if st.button("退出登录"):
-            st.session_state.logged_in = False
-            st.session_state.username = ""
-            st.session_state.message = []
-            st.rerun()
 
         st.markdown("\n")
         if st.button("新建会话", icon="📩", width="stretch"):
@@ -142,8 +137,8 @@ else:
                 st.session_state.name = '两脚兽'
                 st.rerun()
 
-        # 从数据库加载历史记录
-        st.markdown("聊天记录：")
+        # ===========历史记录=======
+        st.markdown("会话记录：")
         res = supabase.table("pig_chats").select("session_name").eq("username", st.session_state.username).order(
             "updated_at", desc=True).execute()
 
@@ -167,10 +162,17 @@ else:
             st.markdown("你还没有和小猪说过话！")
 
         st.divider()
+        
         st.image("./resource/pig2.jpg", caption="小猪正在思考")
         input_name = st.text_area("你想要小猪叫你什么呢", placeholder="请输入你的昵称", value=st.session_state.name)
         if input_name:
             st.session_state.name = input_name
+            
+        if st.button("退出登录",icon="🔚"):
+            st.session_state.logged_in = False
+            st.session_state.username = ""
+            st.session_state.message = []
+            st.rerun()
 
     # ================= 聊天展示区 =================
     st.markdown(f"**当前会话:** {st.session_state.file}")
