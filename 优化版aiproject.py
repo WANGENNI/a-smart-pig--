@@ -193,7 +193,7 @@ else:
         response = client.chat.completions.create(
             model="deepseek-v4-pro", 
             messages=[
-                {"role": "system", "content": prompt},
+                {"role": "system", "content": system_prompt},
                 *st.session_state.message  #解包
             ],
             stream=True
