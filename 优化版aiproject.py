@@ -55,7 +55,7 @@ def save_session_to_db():
             "message_data": st.session_state.message,
             "updated_at": datetime.now().isoformat()
         }
-        
+
         # 先删除同名的旧记录
         supabase.table("pig_chats").delete().eq("username", st.session_state.username).eq("file",
                                                                                           st.session_state.file).execute()
@@ -93,9 +93,9 @@ if not st.session_state.logged_in:
             if login_user and login_pwd:
                 result = supabase.table("pig_users").select("*").eq("username", login_user).execute()
                 if result.data and result.data[0]["password"] == hash_password(login_pwd):
-                    st.session_state.logged_in = True 
+                    st.session_state.logged_in = True
                     st.session_state.username = login_user
-                    
+
                     st.success("登录成功！")
                     st.rerun()
                 else:
@@ -146,7 +146,7 @@ else:
             for i, record in enumerate(result.data):
                 file_name = record["file"]
                 # 截取显示名字，避免太长
-                display_name =file_name[4:21] 
+                display_name =file_name[4:21]
 
                 with col1:
                     if st.button(display_name, icon="📋", width="stretch", key=f"load_{i}_{file_name}",
@@ -188,17 +188,18 @@ else:
         st.session_state.message.append({"role": "user", "content": prompt})
 
         save_session_to_db()
-
-        response = client.chat.completions.create(
-            model="deepseek-v4-pro",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                *st.session_state.message  # 解包
-            ],
-            stream=True
-        )
-
         with st.chat_message("assistant", avatar="🐷"):
+            with st.spinner("🐷 小猪正在吭哧吭哧地翻找词典..."):
+                response = client.chat.completions.create(
+                    model="deepseek-v4-pro",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        *st.session_state.message  # 解包
+                    ],
+                    stream=True
+                )
+
+
             message_response = st.empty()
             full_response = ''
             for chunk in response:
