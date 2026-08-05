@@ -2,9 +2,12 @@ import streamlit as st
 import os
 import json
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from openai import OpenAI
 from supabase import create_client, Client
+
+# 调时差
+tz_bj = timezone(timedelta(hours=8))
 
 # ================= 页面配置 =================
 st.set_page_config(
@@ -42,7 +45,7 @@ if "name" not in st.session_state:
 if "message" not in st.session_state:
     st.session_state.message = []
 if "file" not in st.session_state:
-    st.session_state.file = datetime.now().strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
+    st.session_state.file = datetime.now(tz_bj).strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
 
 
 # ================= 函数 =================
@@ -53,7 +56,7 @@ def save_session_to_db():
             "name":st.session_state.name,
             "file": st.session_state.file,
             "message_data": st.session_state.message,
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now(tz_bj).isoformat()
         }
 
         # 先删除同名的旧记录
@@ -76,7 +79,7 @@ def delete_session_from_db(session_name):
                                                                                       session_name).execute()
     if session_name == st.session_state.file:
         st.session_state.message = []
-        st.session_state.file = datetime.now().strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
+        st.session_state.file = datetime.now(tz_bj).strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
 
 
 # ================= 登录与注册界面 =================
@@ -132,7 +135,7 @@ else:
         if st.button("新建会话", icon="📩", width="stretch"):
             if st.session_state.message:
                 st.session_state.message = []
-                st.session_state.file = datetime.now().strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
+                st.session_state.file = datetime.now(tz_bj).strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
                 st.session_state.name = '两脚兽'
                 st.rerun()
 
