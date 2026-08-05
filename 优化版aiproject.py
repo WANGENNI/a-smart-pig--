@@ -53,7 +53,7 @@ def save_session_to_db():
             "name":st.session_state.name,
             "file": st.session_state.file,
             "message_data": st.session_state.message,
-            "updated_at": datetime.now().strftime("和小猪在%Y-%m-%d_%H-%M-%S说话了")
+            "updated_at": datetime.now().isoformat()
         }
         
         # 先删除同名的旧记录
